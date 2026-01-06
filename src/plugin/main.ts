@@ -579,37 +579,34 @@ this.app.workspace.onLayoutReady(async () => {
   };
   
   handleeditingToolbar_resize = () => {
-    // Only care about resizing when the toolbar is visible and top-style is active
+    // 仅在可见且顶部样式启用时处理
     if (!this.settings.cMenuVisibility || !this.isTopToolbarActive()) {
       return false;
     }
-  
+
     const view = app.workspace.getActiveViewOfType(ItemView);
     if (!ViewUtils.isSourceMode(view)) {
       return false;
     }
-  
+
     const leafwidth = this.app.workspace.activeLeaf.view.leaf.width ?? 0;
-    // No width, or nothing changed → nothing to do
-    if (leafwidth <= 0 || this.Leaf_Width === leafwidth) {
+    // 无法获取宽度则跳过
+    if (leafwidth <= 0) {
       return false;
     }
-  
-    this.Leaf_Width = leafwidth;
-  
-    if (this.settings.cMenuWidth && leafwidth) {
-      const diff = leafwidth - this.settings.cMenuWidth;
-  
-      // Same guard as before: don't rebuild if the configured width still fits
-      if (diff < 78 && leafwidth > this.settings.cMenuWidth) {
-        return;
-      }
-  
-      setTimeout(() => {
-        resetToolbar(this);
-        editingToolbarPopover(app, this);
-      }, 200);
+
+    // 只有在宽度变化时才重建，避免频繁抖动
+    if (this.Leaf_Width === leafwidth) {
+      return false;
     }
+
+    this.Leaf_Width = leafwidth;
+
+    // 宽度变化后强制重建，重新计算是否需要“更多”按钮
+    setTimeout(() => {
+      resetToolbar(this);
+      editingToolbarPopover(app, this, "top");
+    }, 50);
   };
 
   setIS_MORE_Button(status: boolean): void {
