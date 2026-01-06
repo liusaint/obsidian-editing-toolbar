@@ -104,12 +104,12 @@ export class ChooseFromIconList extends FuzzySuggestModal<string> {
         currentCommands[menuID['index']].icon = item;
       }
       // 更新当前配置
-      this.plugin.updateCurrentCommands(currentCommands);
+      this.plugin.updateCurrentCommands(currentCommands, this.currentEditingConfig);
     } else {
       this.command.icon = item;
       currentCommands.push(this.command);
       // 更新当前配置
-      this.plugin.updateCurrentCommands(currentCommands);
+      this.plugin.updateCurrentCommands(currentCommands, this.currentEditingConfig);
     }
 
     await this.plugin.saveSettings();
@@ -247,7 +247,7 @@ export class CommandPicker extends FuzzySuggestModal<Command> {
         // 添加命令到当前配置
         currentCommands.push(item);
         // 更新当前配置
-        this.plugin.updateCurrentCommands(currentCommands);
+        this.plugin.updateCurrentCommands(currentCommands, this.currentEditingConfig);
         await this.plugin.saveSettings();
         setTimeout(() => {
           dispatchEvent(new Event("editingToolbar-NewCommand"));
@@ -258,7 +258,7 @@ export class CommandPicker extends FuzzySuggestModal<Command> {
         );
       } else {
         // 使用统一的图标选择器
-        new ChooseFromIconList(this.plugin, item, false).open();
+        new ChooseFromIconList(this.plugin, item, false, null, this.currentEditingConfig).open();
       }
     }
   }
@@ -296,11 +296,11 @@ export class ChangeCmdname extends Modal {
         
         let menuID = findmenuID(this.plugin, this.item, this.issub,currentCommands)
         this.item.name = value;
-        if (!this.issub) //不是子项
-        {
-          let index = menuID['index']
-          //  console.log(index,"index")
-          if (index === -1) {
+      if (!this.issub) //不是子项
+      {
+        let index = menuID['index']
+        //  console.log(index,"index")
+        if (index === -1) {
             currentCommands.push(this.item);
           } else {
             currentCommands[index].name = this.item.name;
@@ -315,7 +315,7 @@ export class ChangeCmdname extends Modal {
         }
         
         // 更新当前配置
-        this.plugin.updateCurrentCommands(currentCommands);
+        this.plugin.updateCurrentCommands(currentCommands, this.currentEditingConfig);
         await this.plugin.saveSettings();
       }, 100, true))
       .inputEl.addEventListener('keydown', this.submitEnterCallback);
