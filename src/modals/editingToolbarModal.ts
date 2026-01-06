@@ -527,25 +527,42 @@ function positionToolbar(toolbar: HTMLElement, editor: Editor) {
   const to = editor.getCursor("to");
   //@ts-ignore
   const coords = editor.coordsAtPos(from); //选择开始位置
-
-  // 计算左侧位置
-  const sideDockWidth = activeDocument.getElementsByClassName("mod-left-split")[0]?.clientWidth ?? 0;
-  const sideDockRibbonWidth = activeDocument.getElementsByClassName("side-dock-ribbon mod-left")[0]?.clientWidth ?? 0;
-  const leftSideDockWidth = sideDockWidth + sideDockRibbonWidth;
-
-  // 计算水平位置，确保不超出屏幕右侧
-  let leftPosition = coords.left - leftSideDockWidth - 28;
-
-  // 检查是否超出屏幕右侧
-  const rightEdge = leftPosition + toolbarWidth;
-  if (rightEdge > windowWidth - leftSideDockWidth) {
-
-    leftPosition = windowWidth - leftSideDockWidth - toolbarWidth - rightMargin;
-
+  //@ts-ignore
+  const coordsTo = editor.coordsAtPos(to); //选择结束位置
+  // 结束位置向前回退一字符，避免选中末尾时返回到下一行起点
+  let adjustedEndPos = { line: to.line, ch: Math.max(0, to.ch - 1) };
+  if (to.ch === 0 && to.line > from.line) {
+    const prevLine = Math.max(0, to.line - 1);
+    const prevLineText = editor.getLine(prevLine);
+    adjustedEndPos = { line: prevLine, ch: prevLineText?.length ?? 0 };
   }
+  //@ts-ignore
+  const coordsEnd = editor.coordsAtPos(adjustedEndPos) || coordsTo || coords;
 
-  // 确保不会超出左侧
-  leftPosition = Math.max(0, leftPosition);
+  const coordsToRight =
+    (editor as any).cm?.coordsAtPos
+      ? (editor as any).cm.coordsAtPos(editor.posToOffset(to), -1)
+      : coordsEnd;
+
+  // 计算选区中心，避免向左偏移
+  const selectionLeft =
+    (coords as any)?.left ?? (coordsEnd as any)?.left ?? 0;
+  const selectionRight =
+    (coordsToRight as any)?.right ??
+    (coordsToRight as any)?.left ??
+    selectionLeft;
+  const selectionCenter = selectionLeft + (selectionRight - selectionLeft) / 2;
+
+  // 计算水平位置：能居中就居中，否则与选区右侧对齐，再按边界收缩
+  const minLeft = editorRect.left + 8;
+  const maxLeft = editorRect.right - toolbarWidth - rightMargin;
+  const centerPosition = selectionCenter - toolbarWidth / 2;
+  let leftPosition =
+    centerPosition >= minLeft && centerPosition <= maxLeft
+      ? centerPosition
+      : selectionRight - toolbarWidth;
+  if (leftPosition < minLeft) leftPosition = minLeft;
+  if (leftPosition > maxLeft) leftPosition = maxLeft;
 
   // 计算顶部位置（保持原有逻辑）
   let topPosition = calculateTopPosition(editor, coords, editorRect, toolbarHeight);
