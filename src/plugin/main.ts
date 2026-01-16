@@ -605,7 +605,7 @@ this.app.workspace.onLayoutReady(async () => {
     // 宽度变化后强制重建，重新计算是否需要“更多”按钮
     setTimeout(() => {
       resetToolbar(this);
-      editingToolbarPopover(app, this, "top");
+      editingToolbarPopover(app, this);
     }, 50);
   };
 
